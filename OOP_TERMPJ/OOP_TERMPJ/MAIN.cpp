@@ -5,69 +5,116 @@
 #include "BookType.h"
 #include "LoginManager.h"
 
-// "C:\\Users\\mrkim\\바탕 화면\\OOP_Library\\BOOK_DATA.txt"
+#define BOOK_DB_PATH "C:\\Users\\mrkim\\바탕 화면\\OOP_Library\\BOOK_DATA.txt"
+#define USER_DB_PATH "C:\\Users\\mrkim\\바탕 화면\\OOP_Library\\USER_DATA.txt"
+
 using namespace std;
 
 class BookManager {
-	const char* BOOK_DATA_LINK;
-	const char* BOOK_DATA_LINK_BU;
-	ifstream* bin;
-	ifstream* bout;
-	int n;
+	
 public:
-	BookManager(const char* src1, const char* src2) {
-		BOOK_DATA_LINK = src1;
-		BOOK_DATA_LINK_BU = src2;
-		bin = new ifstream(src1, ios::in);
-		
-		cout << n << "개의 단어가 있습니다." << endl;
-	}
-	void write(char* s, int i = 0) {
-		(*data).seekp(i * sizeof(string), ios::beg);
-		(*data) << s << endl;
-		(*data).flush();
-		read_all();
-	}
-	void read_all() {
-		int temp = data->tellg();
-		ifstream i(BOOK_DATA_LINK);
-		string buffer;
-		while (i) {
-			i >> buffer;
-			if (i.eof()) break;
-			cout << buffer << endl;;
+	BookManager() {	}
+	/* ini 는 반드시 대문자 알파벳이여야 함. */
+	void add_book(char ini = 'A', string title="none", string writer="none") {
+		std::ifstream infile(BOOK_DB_PATH);
+		std::vector<std::string> lines;
+		std::string line;
+
+		// 파일의 내용을 벡터에 저장
+		for (int i = 0; std::getline(infile, line);i++) {
+			if (line[0] >= ini) {
+				// ini로 시작하는 섹션을 찾은 경우
+				lines.push_back((title + " " + writer));
+				lines.push_back(line);
+				break;
+			}
+			// ini 로 시작파는 책 이름을 발견하지 못했다면
+			lines.push_back(line);
 		}
-		cout << endl;
-		i.close();
-		(*data).seekg(temp, ios::beg);
+		// 나머지 내용들을 복사한다.
+		while (getline(infile, line)) lines.push_back(line);
+
+		// 만약, 모든 책의 제목보다 높은 제목이라면
+		if(ini > line[0]) lines.push_back((title + " " + writer));
+
+		infile.close();
+
+		for (string& s : lines) {
+			cout << s << endl;
+		}
+		// 파일에 수정된 내용을 쓰기
+		std::ofstream outfile(BOOK_DB_PATH);
+		for (const auto& updatedLine : lines) {
+			outfile << updatedLine << std::endl;
+		}
+		outfile.close();
+
+		std::cout << "도서 추가 완료" << std::endl;
 	}
-	void clear() {
-		ifstream from(BOOK_DATA_LINK);
-		ofstream to(BOOK_DATA_LINK_BU);
-		
+	void remove_book_i(int i) {
+		ifstream infile(BOOK_DB_PATH);
+		vector<std::string> lines; // 파일 내용을 저장할 벡터
 		string line;
-		while (getline(from, line)) {
-			to << line << endl;
+
+		// 파일의 내용을 벡터에 저장 (i번째 줄 제외)
+		int lineNumber = 1;
+		while (std::getline(infile, line)) {
+			if (lineNumber != i) {
+				lines.push_back(line);
+			}
+			lineNumber++;
 		}
 
-		from.close();
-		to.flush();
-		to.close();
+		infile.close(); // 입력 파일 스트림을 닫음
+
+		// 파일을 쓰기 모드로 열어서 벡터의 내용을 파일에 씀 (기존 파일 내용 덮어씀)
+		ofstream outfile(BOOK_DB_PATH);
+		for (const auto& updatedLine : lines) {
+			outfile << updatedLine << std::endl;
+		}
+
+		std::cout << "제거 완료" << std::endl;
+		outfile.close(); // 출력 파일 스트림을 닫음
 	}
-	bool is_open() {
-		return data->is_open();
+	
+	vector<string> read_books_startwith(string initial = " ") {
+		ifstream infile (BOOK_DB_PATH);
+		string buff;
+		vector<string> item;
+		if (initial == "all") {
+			while (getline(infile, buff)) {
+				item.push_back(buff);
+			}
+		}
+		else {
+			while (getline(infile, buff)) {
+				if (buff.at(0) == initial.at(0)) item.push_back(buff);
+			}
+		}
+		
+		infile.close();
+		if (item.empty()) cout << "검색된 책이 없습니당" << endl;
+		else for (string& s : item) cout<<s<<endl;
+		return item;
 	}
-	bool is_eof() {
-		return data->eof();
+	void read_all_books() {
+		ifstream infile(BOOK_DB_PATH);
+		string line;
+		while (getline(infile, line)) {
+			cout<<line<<endl;
+		}
+
+		if (infile.eof()) cout << "검색된 책이 없습니당" << endl;
+		infile.close();
 	}
 };
 
 
 
 int main(void) {
-	LoginManager* lm = new LoginManager("C:\\Users\\mrkim\\바탕 화면\\OOP_Library\\USER_DATA.txt");
-	BookManager* bm = new BookManager("C:\\Users\\mrkim\\바탕 화면\\OOP_Library\\BOOK_DATA.txt", "C:\\Users\\mrkim\\바탕 화면\\OOP_Library\\BOOK_DATA_BACKUP.txt");
-	if (!bm->is_open())return 1;
+	LoginManager* lm = new LoginManager(USER_DB_PATH);
+	BookManager* bm = new BookManager();
+	if (!bm)return 1;
 	cout << "파일 오픈 성공!" << endl;
 
 	int flag = 0;
@@ -79,24 +126,33 @@ int main(void) {
 		switch (flag)
 		{
 		case 1: {
-			bm->read_all();
+			cout << "알파벳 하나 입력 >>";
+			string c;
+			cin >> c;
+			cin.ignore();
+			bm->read_books_startwith(c);
 			break;
 		}
 		case 2: {
-			char buffer[40];
-			cout << "입력할 문장을 쓰세요. : ";
-			cin.getline(buffer, 39, '\n');
-			cout << buffer << "입력됨." << endl;
-			bm->write(buffer, 3);
+			string title, writer;
+			cout << "책 이름과, 책 저자 입력 >>";
+			cin >> title >> writer;
+			cin.ignore();
+			bm->add_book(title[0], title, writer);
 			break;
 		}
 		case 3: {
-			bm->clear();
+			int i;
+			cout << "삭제할 책 번호를 입력하세요>>";
+			cin >> i;
+			cin.ignore();
+			bm->remove_book_i(i);
 			break;
 		}
 		case 4: {
 			string id, pw;
 			cin >> id >> pw;
+			cin.ignore();
 			lm->login(id, pw);
 			break;
 		}
@@ -104,6 +160,7 @@ int main(void) {
 			string id, pw, name, level;
 			cout << "아이디, 비밀번호, 이름, 직급을 입력하세요! >>";
 			cin >> id >> pw >> name >> level;
+			cin.ignore();
 			lm->sign_up(id, pw, name, level);
 			break;
 		}

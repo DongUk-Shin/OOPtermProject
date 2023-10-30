@@ -28,56 +28,48 @@ public:
 };
 int User::user_count = 0;
 class LoginManager {
-	std::istream* uin;
-	std::ostream* uout;
+	std::string userdb_path;
 public:
 	LoginManager(const char* UserDataLink) {
-
-		uin = new std::ifstream(UserDataLink, std::ios::in);
-		uout = new std::ofstream(UserDataLink, std::ios::app);
-			std::string s;
-		while (uin->eof()) {
-			*uin >> s;
-			std::cout << s;
-			uin->seekg(sizeof(std::string), std::ios::cur);
-		}
-	}
-	void skip_n(int n) {
-		std::string s;
-		for (int i = 0; i < n && *uin; i++) *uin >> s;
+		userdb_path = UserDataLink;
 	}
 	bool login(std::string& id, std::string& pw) {
-    uin->seekg(0, std::ios::beg);
-    std::cout << "파일 오픈 성공!";
-    std::string i, p;
-    bool found = false;
-    
-    while (*uin >> i >> p) {
-        if (i == id && p == pw) {
-            std::string name, level;
-            *uin >> name >> level;
-            std::cout << "id : " << i << " pw : " << p << " " << name << " " << level << std::endl;
-            found = true;
-            break;
-        } else {
-            // 실패한 로그인 정보를 건너뛰기
-            std::string dummy;
-            std::getline(*uin, dummy);
-        }
-    }
+		bool found = false;
+		std::ifstream ifile(userdb_path);
+		if (!ifile) return found;
+		std::cout << "파일 오픈 성공!";
+		std::string i;
+		std::string p;
+		std::string dummy;
 
-    return found;
-}
+		while (!ifile.eof()) {
+			ifile >> i >> p;
+			if (i == id && p == pw) {
+				std::string name, level;
+				ifile >> name >> level;
+				std::cout << "id : " << i << " pw : " << p << " name : " << name << " lavel : " << level << std::endl;
+				found = true;
+				return found;
+			}
+			else {
+				// 실패한 로그인 정보를 건너뛰기
+				std::getline(ifile, dummy);
+			}
+		}
+		std::cout << "종료됨." << std::endl;
+		ifile.close();
+		if(found)
+		return found;
+	}
 
 	/* 유저 데이터 파일에 씀 */
 	bool sign_up(std::string id, std::string pw, std::string name, std::string level) {
+		std::ofstream ofile(userdb_path, std::ios::app);
 		id = id.substr(0, 10);
 		int pos;
-		while ((pos = id.find('k')) != std::string::npos)
-			id.replace(pos, 1, "u");
 		std::cout << "id 는 " << id << "가 되었습니다." << std::endl;
-		*uout << id << ' ' << pw << ' ' << name << ' ' << level << '\n';
-		uout->flush();
+		ofile << id << ' ' << pw << ' ' << name << ' ' << level << '\n';
+		ofile.close();
 		return true;
 	}
 };
