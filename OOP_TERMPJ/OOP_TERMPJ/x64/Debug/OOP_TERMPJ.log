@@ -1,0 +1,4 @@
+﻿  MAIN.cpp
+C:\Users\mrkim\source\repos\OOP_TERMPJ\OOP_TERMPJ\LoginManager.h(69,7): warning C4101: 'pos' :참조되지 않은 지역 변수입니다.
+C:\Users\mrkim\source\repos\OOP_TERMPJ\OOP_TERMPJ\LoginManager.h(63): warning C4715: 'LoginManager::login': 모든 제어 경로에서 값을 반환하지는 않습니다.
+  OOP_TERMPJ.vcxproj -> C:\Users\mrkim\source\repos\OOP_TERMPJ\x64\Debug\OOP_TERMPJ.exe
